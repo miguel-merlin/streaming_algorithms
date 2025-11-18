@@ -74,10 +74,3 @@ print(cms.estimate("my-item"))
 - `n` should match the size of the event universe; the hash-based sketch never materializes the `k × n` matrix, so it is better suited to very large universes.
 - For Count-Min Sketch, `epsilon` controls the additive error (`≈ ε · total_count`) and `delta` the failure probability (`1 - δ`).
 
-## Extending the project
-
-Ideas for further exploration:
-
-1. Add unit tests that feed synthetic streams with known distances.
-2. Expose a CLI flag to select the sketch and verbosity level.
-3. Experiment with other 1-stable distributions or different hashing strategies for the projection matrix.
