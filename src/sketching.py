@@ -1,7 +1,8 @@
 import numpy as np
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, List, Any
 import hashlib
 import math
+import random
 from utils import print_matrix_journal_style
 
 
@@ -167,8 +168,6 @@ class HashCauchyL1DifferenceSketch:
         for color, idx in stream:
             self.process_event(color, idx)
 
-    # ---------- Query ----------
-
     def estimate_l1_distance(self) -> float:
         """
         Return the sketch-based estimate of D = sum_i |f_i - g_i|.
@@ -186,3 +185,71 @@ class HashCauchyL1DifferenceSketch:
             return abs_vals[mid]
         else:
             return 0.5 * (abs_vals[mid - 1] + abs_vals[mid])
+
+
+class CountMinSketch:
+    """
+    Count-Min Sketch implementation.
+
+    Parameters
+    ----------
+    epsilon : float
+        Additive error guarantee: estimate <= true_count + epsilon * total_count
+    delta : float
+        Failure probability: guarantee holds with probability >= 1 - delta
+    """
+
+    def __init__(self, epsilon: float, delta: float, seed: int = 42):
+        if not (0 < epsilon < 1):
+            raise ValueError("epsilon must be in (0, 1)")
+        if not (0 < delta < 1):
+            raise ValueError("delta must be in (0, 1)")
+
+        # w ~ e / epsilon, d ~ ln(1/delta)
+        self.w = math.ceil(math.e / epsilon)
+        self.d = math.ceil(math.log(1.0 / delta))
+
+        self.tables: List[List[int]] = [[0] * self.w for _ in range(self.d)]
+        self.total_count = 0  # total number of items seen
+
+        # Set up d 2-universal hash functions of the form:
+        # h_i(x) = (a_i * hash(x) + b_i) mod P mod w
+        self._P = (1 << 61) - 1  # large prime
+        rng = random.Random(seed)
+        self.hash_params = [
+            (rng.randrange(1, self._P), rng.randrange(0, self._P))
+            for _ in range(self.d)
+        ]
+
+    def _hash(self, i: int, x: Any) -> int:
+        """Hash item x into column index for row i."""
+        a, b = self.hash_params[i]
+        h = hash(x) & ((1 << 61) - 1)
+        return ((a * h + b) % self._P) % self.w
+
+    def update(self, x: Any, count: int = 1) -> None:
+        """Add `count` occurrences of item x to the sketch."""
+        if count < 0:
+            raise ValueError("Count-Min Sketch doesn't support negative updates")
+
+        self.total_count += count
+        for i in range(self.d):
+            j = self._hash(i, x)
+            self.tables[i][j] += count
+
+    def estimate(self, x: Any) -> int:
+        """
+        Estimate the frequency f_x of item x.
+        Returns the minimum over all rows.
+        """
+        estimates = []
+        for i in range(self.d):
+            j = self._hash(i, x)
+            estimates.append(self.tables[i][j])
+        return min(estimates) if estimates else 0
+
+    def __repr__(self) -> str:
+        return (
+            f"CountMinSketch(d={self.d}, w={self.w}, "
+            f"total_count={self.total_count})"
+        )

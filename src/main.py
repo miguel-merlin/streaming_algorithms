@@ -5,7 +5,7 @@ from math import sqrt
 def l1_difference_sketch_example():
     # Example parameters
     n = 6  # Universe size
-    k = 2  # Number of sketch rows
+    k = 10  # Number of sketch rows
     random_seed = 42
 
     # Create the L1 difference sketch
@@ -41,7 +41,7 @@ def l1_difference_sketch_example():
 
 def hash_cauchy_l1_difference_sketch_example():
     n = 1000  # Universe size
-    k = 200  # Number of sketch rows
+    k = 10  # Number of sketch rows
     sketch = HashCauchyL1DifferenceSketch(n=n, k=k, seed=42)
 
     # Example stream of events
@@ -69,5 +69,5 @@ def hash_cauchy_l1_difference_sketch_example():
 
 
 if __name__ == "__main__":
-    l1_difference_sketch_example()
-    # hash_cauchy_l1_difference_sketch_example()
+    # l1_difference_sketch_example()
+    hash_cauchy_l1_difference_sketch_example()
